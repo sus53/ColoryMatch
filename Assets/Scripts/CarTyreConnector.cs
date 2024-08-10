@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.VFX;
 
@@ -39,6 +40,7 @@ public class CarTyreConnector : MonoBehaviour
         if (other.gameObject.CompareTag("Tyre"))
         {
             tyre = other.gameObject;
+
             Material tyreMat = tyre.GetComponent<Renderer>().material;
             bool isMovable = Characters.GetComponent<MoveCharacter>().SearchDeployable(tyreMat);
 
@@ -52,7 +54,7 @@ public class CarTyreConnector : MonoBehaviour
                 transform.GetComponent<Collider>().enabled = false;
                 StartCoroutine(MoveCar());
                 StartCoroutine(ResetCarPosition(2.8f));
-                Destroy(other.gameObject);
+                StartCoroutine(DestroyTyre(other.gameObject));
             }
             else
             {
@@ -61,6 +63,13 @@ public class CarTyreConnector : MonoBehaviour
             StartCoroutine(Global.GetComponent<GlobalScript>().MoveTyreToFront(tyre));
         }
     }
+
+    IEnumerator DestroyTyre(GameObject tyre)
+    {
+        yield return new WaitForSeconds(1.1f);
+        Destroy(tyre);
+    }
+
     IEnumerator MoveCar()
     {
         yield return new WaitForSeconds(1.8f);
@@ -75,6 +84,11 @@ public class CarTyreConnector : MonoBehaviour
             elapsedTime += Time.deltaTime;
             yield return null;
         }
+        if (Characters.childCount == 0)
+        {
+            Global.GetComponent<GlobalScript>().NextLevel();
+            Global.GetComponent<Settings>().AddCoin(10);
+        }
 
         transform.position = car_finalPosition;
 
@@ -83,6 +97,10 @@ public class CarTyreConnector : MonoBehaviour
     IEnumerator ResetCarPosition(float time)
     {
         yield return new WaitForSeconds(time);
+        if (Characters.childCount == 0)
+        {
+            Destroy(this.gameObject);
+        }
         carAudio.Play();
         smoke1.Play();
         smoke2.Play();
@@ -100,10 +118,7 @@ public class CarTyreConnector : MonoBehaviour
         transform.position = car_targetPosition;
         transform.GetComponent<Collider>().enabled = true;
         Global.GetComponent<GlobalScript>().SetTyreMovable(true);
-        if (Characters.childCount == 0)
-        {
-            Global.GetComponent<GlobalScript>().NextLevel();
-        }
+
         smoke1.Stop();
         smoke2.Stop();
     }

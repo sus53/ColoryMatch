@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 public class MoveCharacter : MonoBehaviour
@@ -11,25 +12,13 @@ public class MoveCharacter : MonoBehaviour
     private Animator characterAnimator;
     public GameObject characterGen;
     private Dictionary<int, List<string>> charData;
-    void Start()
-    {
-        charData = characterGen.GetComponent<CharacterGenerator>().GetCharacterData();
-    }
 
     public bool SearchDeployable(Material carMaterial)
     {
+        charData = characterGen.GetComponent<CharacterGenerator>().GetCharacterData();
         int row = characterGen.GetComponent<CharacterGenerator>().GetCol();
         Color carColor = carMaterial.color;
         Transform character;
-        // int length = 0;
-        // if (transform.childCount <= 2)
-        // {
-        //     length = transform.childCount;
-        // }
-        // else
-        // {
-        //     length = Mathf.Clamp(transform.childCount, 0, row);
-        // }
         for (int i = 1; i <= charData.Count; i++)
         {
             if (charData[i].Count == 0) continue;
@@ -39,6 +28,11 @@ public class MoveCharacter : MonoBehaviour
             if (character.GetChild(0).GetComponent<Renderer>().material.color == carColor)
             {
                 charData[i].RemoveAt(0);
+                if (charData[i].Count > 0)
+                {
+                    GameObject lastGO = transform.Find(charData[i][charData[i].Count - 1]).gameObject;
+                    characterGen.GetComponent<CharacterGenerator>().SpawnCharacter(lastGO, i);
+                }
                 animator = character.GetComponent<Animator>();
                 StartCoroutine(MoveCharacterToCar(character));
                 return true;

@@ -13,16 +13,14 @@ public class TyreController : MonoBehaviour
     private bool isTyreMovable2 = false;
     public GameObject Tyres;
     public GameObject Global;
-    public GameObject Spare1;
-    public GameObject Spare2;
-    public GameObject Spare3;
-    public GameObject Spare4;
-    public GameObject Canvas;
+    public GameObject SecondChanceCanvas;
+    public GameObject GameOverCanvas;
     public float dissolveDuration;
     public Material dissolve;
     private List<Material> TyreColor = new List<Material>();
     public AudioSource gameoverAudio;
     public AudioSource backgroundAudio;
+    public GameObject TyreHolders;
     public Vector3 GetInitialPosition()
     {
         return this.initialPosition;
@@ -37,7 +35,39 @@ public class TyreController : MonoBehaviour
         initialPosition = transform.position;
 
     }
-    void OnMouseDown()
+    void Update()
+    {
+        if (Input.touchCount > 0)
+        {
+            Touch touch = Input.GetTouch(0);
+
+            // Check if the touch phase is Began, which is equivalent to mouse down
+            if (touch.phase == TouchPhase.Began)
+            {
+                // Perform a raycast to check if the touch is on this object
+                Ray ray = Camera.main.ScreenPointToRay(touch.position);
+                RaycastHit hit;
+
+                if (Physics.Raycast(ray, out hit))
+                {
+                    if (hit.transform == transform)
+                    {
+                        OnTouchDown();
+                    }
+                }
+            }
+        }
+    }
+    // void OnMouseDown()
+    // {
+    //     if (!Global.GetComponent<GlobalScript>().GetTyreMovable()) return;
+    //     if (!isTyreMovable2) return;
+    //     lastMousePosition = Input.mousePosition;
+    //     initialPosition = transform.position;
+    //     Global.GetComponent<GlobalScript>().SetTyreMovable(false);
+    //     StartCoroutine(MoveTyreToCar());
+    // }
+    void OnTouchDown()
     {
         if (!Global.GetComponent<GlobalScript>().GetTyreMovable()) return;
         if (!isTyreMovable2) return;
@@ -46,7 +76,6 @@ public class TyreController : MonoBehaviour
         Global.GetComponent<GlobalScript>().SetTyreMovable(false);
         StartCoroutine(MoveTyreToCar());
     }
-
     IEnumerator MoveTyreToCar()
     {
         Vector3 targetPosition = new Vector3(0.005f, 0.144f, 0.68f);
@@ -98,12 +127,20 @@ public class TyreController : MonoBehaviour
         {
             backgroundAudio.Stop();
             gameoverAudio.Play();
-            Canvas.SetActive(true);
+            GameOverCanvas.SetActive(true);
+            Time.timeScale = 0f;
+            yield break;
+        }
+        if (!spare.activeSelf)
+        {
+            transform.gameObject.SetActive(false);
+            backgroundAudio.Stop();
+            gameoverAudio.Play();
+            SecondChanceCanvas.SetActive(true);
+
         }
 
         transform.position = new Vector3(spare.transform.position.x, 0.144f, spare.transform.position.z);
-
-
 
         float elapsedTime = 0f;
         float duration = 0.8f;
@@ -126,25 +163,24 @@ public class TyreController : MonoBehaviour
         transform.SetParent(spare.transform);
         transform.SetAsFirstSibling();
         Global.GetComponent<GlobalScript>().SetTyreMovable(true);
+        if (!spare.activeSelf)
+        {
+            Time.timeScale = 0f;
+        }
     }
 
     GameObject CheckSpare()
     {
-        if (Spare1.transform.childCount == 0)
+        for (int i = 0; i < TyreHolders.transform.childCount; i++)
         {
-            return Spare1;
-        }
-        else if (Spare2.transform.childCount == 0)
-        {
-            return Spare2;
-        }
-        else if (Spare3 != null && Spare3.transform.childCount == 0)
-        {
-            return Spare3;
-        }
-        else if (Spare4 != null && Spare4.transform.childCount == 0)
-        {
-            return Spare4;
+            if (TyreHolders.transform.GetChild(i).childCount > 0 && TyreHolders.transform.GetChild(i).transform.GetChild(0).gameObject == transform.gameObject)
+            {
+                return TyreHolders.transform.GetChild(i).transform.gameObject;
+            }
+            if (TyreHolders.transform.GetChild(i).transform.childCount == 0)
+            {
+                return TyreHolders.transform.GetChild(i).transform.gameObject;
+            }
         }
         return null;
 
